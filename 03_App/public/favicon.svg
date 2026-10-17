@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>TikTok Finds</title>
+  <rect width="64" height="64" rx="16" fill="#ff9f43"/>
+  <g fill="none" stroke="#15111f" stroke-width="4" stroke-linecap="round">
+    <path d="M24 24 q-5 -5 0 -10"/>
+    <path d="M34 24 q-5 -5 0 -10"/>
+    <path d="M44 24 q-5 -5 0 -10"/>
+  </g>
+  <path d="M8 30 H56 C56 45 46 55 32 55 C18 55 8 45 8 30 Z" fill="#15111f" stroke="#15111f" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="26,36 26,48 38,42" fill="#ff3d7f" stroke="#ff3d7f" stroke-width="3" stroke-linejoin="round"/>
+</svg>

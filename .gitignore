@@ -1,0 +1,8 @@
+# private: raw TikTok export and unfiltered pipeline data
+01_Raw_Data/
+02_Data_Cleansing/source_links.csv
+02_Data_Cleansing/source_links_failed.csv
+02_Data_Cleansing/source_links_cache.jsonl
+02_Data_Cleansing/classification_work/
+__pycache__/
+.claude/settings.local.json

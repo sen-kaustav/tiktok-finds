@@ -17,6 +17,7 @@ export default defineConfig({
         name: 'TikTok Finds',
         short_name: 'Finds',
         description: 'Recipes and restaurants from our shared TikToks.',
+        id: base,
         start_url: base,
         scope: base,
         display: 'standalone',
@@ -24,8 +25,8 @@ export default defineConfig({
         background_color: '#15111f',
         theme_color: '#15111f',
         icons: [
-          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: 'pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },

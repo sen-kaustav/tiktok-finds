@@ -676,3 +676,40 @@ p {
     transition: none !important;
   }
 }
+
+.install {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 8px;
+  right: 8px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 10px;
+  background: var(--raised);
+  border: 2px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.install__icon {
+  border-radius: 8px;
+}
+.install__text {
+  flex: 1;
+  font-weight: 600;
+}
+.install__btn {
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: var(--on);
+  font-weight: 700;
+}
+.install__close {
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+}

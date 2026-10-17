@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { loadVideos } from './data.js'
 import Landing from './components/Landing.jsx'
 import Feed from './components/Feed.jsx'
+import InstallBanner from './components/InstallBanner.jsx'
 
 // Cross-fade + slide between screens using the View Transitions API.
 // Browsers without it just swap instantly.
@@ -74,7 +75,10 @@ export default function App() {
     )
   }
 
-  return screen === 'landing' ? (
+  return (
+    <>
+      <InstallBanner />
+      {screen === 'landing' ? (
     <Landing counts={counts} loading={status === 'loading'} onPick={openFeed} />
   ) : (
     <Feed
@@ -87,5 +91,7 @@ export default function App() {
       sheet={sheet} openSheet={openSheet} closeSheet={closeSheet}
       clearAll={clearAll} goHome={goHome}
     />
+  )}
+    </>
   )
 }

@@ -32,20 +32,24 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png}'],
-        globIgnores: ['thumbs/**'],
+        // Data and thumbnails come from Supabase, not the app shell.
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.endsWith('/data/videos.csv'),
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'data' },
-          },
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith(`${base}thumbs/`),
+            // Signed URLs carry an expiring token, so key the cache on the URL without it.
+            urlPattern: ({ url }) => url.pathname.includes('/storage/v1/object/sign/thumbs/'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'thumbs',
               expiration: { maxEntries: 800 },
               cacheableResponse: { statuses: [0, 200] },
+              plugins: [
+                {
+                  cacheKeyWillBeUsed: async ({ request }) => {
+                    const u = new URL(request.url)
+                    return `${u.origin}${u.pathname}`
+                  },
+                },
+              ],
             },
           },
           {

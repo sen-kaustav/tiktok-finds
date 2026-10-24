@@ -1,6 +1,6 @@
 import { ArrowRight } from '../icons.jsx';
 
-export default function Landing({ counts, loading, onPick }) {
+export default function Landing({ counts, loading, onPick, onSignOut }) {
   return (
     <main className="landing">
       <div className="brand">
@@ -34,6 +34,7 @@ export default function Landing({ counts, loading, onPick }) {
         </span>
         <ArrowRight />
       </button>
+      <button className="signout" onClick={onSignOut}>Sign out</button>
     </main>
   );
 }

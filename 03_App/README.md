@@ -1,12 +1,12 @@
 # TikTok Finds app
 
-Mobile-first PWA (React + Vite, plain JavaScript) that browses `02_Data_Cleansing/classified_videos.csv`.
+Mobile-first PWA (React + Vite, plain JavaScript) that browses the catalogue stored in Supabase (table `videos`, private `thumbs` bucket). Sign-in is by emailed one-time code; only invited accounts can get in.
 
 ## Run
 
 ```bash
 npm install
-npm run dev        # copies the CSV to public/data/, then serves on your Wi-Fi network (vite --host)
+npm run dev        # serves on your Wi-Fi network (vite --host)
 npm run build      # production build in dist/
 npm run preview    # serve the build on your Wi-Fi network too (vite preview --host)
 ```
@@ -26,16 +26,17 @@ npm run preview    # serve the build on your Wi-Fi network too (vite preview --h
 
 The `--host` flag is already set in `package.json`, so no extra options are needed.
 
-`npm run dev` and `build` first run `scripts/sync-data.mjs`, which copies the CSV from
-`../02_Data_Cleansing/` into `public/data/videos.csv`. The app fetches it at runtime.
+## Configuration
 
-## Thumbnails
+Create `.env.local` (git-ignored; see `.env.example`) with `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY` (the publishable key). Never put the secret/service-role key here.
 
-TikTok thumbnail links expire. Run `python -I ../02_Data_Cleansing/download_thumbnails.py` while
-the links are still live; images land in `public/thumbs/<video_id>.jpg`. A card falls back to a
-play-glyph placeholder when its image is missing.
+## Data and thumbnails
 
-`public/data/` and `public/thumbs/` hold private data and are git-ignored.
+The app selects all rows from `videos` and signs the thumbnail URLs for a week. The list and URLs
+are cached in local storage so the app opens offline, and the service worker caches the images by
+URL without the token. Loading new data is done from the pipeline (`../02_Data_Cleansing/load_to_supabase.py`
+and `upload_thumbnails.py`). A card falls back to a play-glyph placeholder when its image is missing.
 
 ## Notes
 

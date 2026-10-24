@@ -6,3 +6,10 @@
 02_Data_Cleansing/classification_work/
 __pycache__/
 .claude/settings.local.json
+
+# Supabase secrets
+.env
+.env.*
+!.env.example
+02_Data_Cleansing/classified_videos.csv
+03_App/public/thumbs/

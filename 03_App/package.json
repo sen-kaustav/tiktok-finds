@@ -4,16 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "sync-data": "node scripts/sync-data.mjs",
-    "predev": "npm run sync-data",
     "dev": "vite --host",
-    "prebuild": "npm run sync-data",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview --host"
   },
   "dependencies": {
-    "papaparse": "^5.7.0",
+    "@supabase/supabase-js": "^2.118.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

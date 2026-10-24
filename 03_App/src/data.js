@@ -1,4 +1,4 @@
-import Papa from 'papaparse'
+import { supabase } from './supabase.js'
 
 // Meal types in the data are grouped into three friendly pills. The exact value stays on the card.
 export const MEAL_GROUPS = {
@@ -31,12 +31,12 @@ function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-function toVideo(row) {
+function toVideo(row, thumbUrls) {
   const kind = KINDS[row.category]
   if (!kind) return null
   const dish = (row.dish || '').trim()
-  const venues = (row.venue_name || '').split(';').map((v) => v.trim()).filter(Boolean)
-  const dietary = (row.dietary || '').split(';').map((d) => d.trim()).filter(Boolean)
+  const venues = row.venue_names || []
+  const dietary = row.dietary || []
   const fallback = (row.caption || '').replace(/#\S+/g, '').trim().slice(0, 48)
 
   let title
@@ -64,20 +64,51 @@ function toVideo(row) {
     time: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0,
     mealGroup: MEAL_OF[(row.meal_type || '').toLowerCase()] || '',
     cuisineGroup: CUISINE_OF[(row.cuisine || '').toLowerCase()] || '',
-    thumb: `${import.meta.env.BASE_URL}thumbs/${row.video_id}.jpg`,
+    thumb: (row.thumb_path && thumbUrls[row.thumb_path]) || '',
     haystack: [
       row.caption, row.hashtags, row.dish, row.cuisine, row.meal_type,
-      row.venue_name, row.location, row.dietary, row.reason, kind,
+      venues.join(' '), row.location, dietary.join(' '), row.reason, kind,
     ].join(' ').toLowerCase(),
   }
 }
 
+// Signed thumbnail URLs last a week. The service worker caches the images without the
+// token (see vite.config.js), so cached images stay valid after the URL itself expires.
+const SIGNED_SECONDS = 7 * 24 * 60 * 60
+const CACHE_KEY = 'tiktok-finds:catalogue:v1'
+
+export function readCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY))
+    return cached ? cached.rows.map((r) => toVideo(r, cached.thumbUrls)).filter(Boolean) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY) } catch { /* storage unavailable */ }
+}
+
 export async function loadVideos() {
-  const res = await fetch(`${import.meta.env.BASE_URL}data/videos.csv`)
-  if (!res.ok) throw new Error(`Could not load data (${res.status})`)
-  const text = (await res.text()).replace(/^﻿/, '')
-  const { data } = Papa.parse(text, { header: true, skipEmptyLines: true })
-  return data.map(toVideo).filter(Boolean)
+  const { data: rows, error } = await supabase
+    .from('videos')
+    .select('video_id,canonical_url,posted_at,caption,hashtags,category,cuisine,meal_type,dish,location,venue_names,dietary,reason,thumb_path')
+    .range(0, 4999)
+  if (error) throw error
+
+  const paths = rows.map((r) => r.thumb_path).filter(Boolean)
+  const thumbUrls = {}
+  if (paths.length) {
+    const { data: signed, error: signError } = await supabase.storage.from('thumbs').createSignedUrls(paths, SIGNED_SECONDS)
+    if (signError) throw signError
+    for (const s of signed) if (s.signedUrl) thumbUrls[s.path] = s.signedUrl
+  }
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ rows, thumbUrls }))
+  } catch { /* storage full or unavailable: the app still works online */ }
+  return rows.map((r) => toVideo(r, thumbUrls)).filter(Boolean)
 }
 
 export function filterVideos(videos, { kind, meals, cuisines, query, asc }) {

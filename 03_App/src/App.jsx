@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { loadVideos } from './data.js'
+import { clearCache, loadVideos, readCache } from './data.js'
+import { supabase } from './supabase.js'
+import Login from './components/Login.jsx'
 import Landing from './components/Landing.jsx'
 import Feed from './components/Feed.jsx'
 import InstallBanner from './components/InstallBanner.jsx'
@@ -15,8 +17,10 @@ function transition(dir, update) {
 }
 
 export default function App() {
-  const [videos, setVideos] = useState([])
-  const [status, setStatus] = useState('loading')
+  const [signedIn, setSignedIn] = useState(null) // null while the saved session is checked
+  // Start from the saved list so the app opens offline; it is refreshed once signed in.
+  const [videos, setVideos] = useState(() => readCache() ?? [])
+  const [status, setStatus] = useState(() => (readCache() ? 'ready' : 'loading'))
   const [screen, setScreen] = useState('landing')
   const [kind, setKind] = useState('recipe')
   const [sheet, setSheet] = useState(false)
@@ -26,11 +30,21 @@ export default function App() {
   const [asc, setAsc] = useState(false)
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)))
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      setSignedIn(Boolean(session))
+      if (event === 'SIGNED_OUT') { clearCache(); setVideos([]); setStatus('loading') }
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!signedIn) return
     loadVideos().then(
       (v) => { setVideos(v); setStatus('ready') },
-      () => setStatus('error'),
+      () => setStatus((s) => (s === 'ready' ? s : 'error')),
     )
-  }, [])
+  }, [signedIn])
 
   // Keep the phone's back gesture meaningful: sheet -> feed -> landing.
   useEffect(() => {
@@ -66,11 +80,14 @@ export default function App() {
     restaurant: videos.filter((v) => v.kind === 'restaurant').length,
   }), [videos])
 
+  if (signedIn === null) return <main className="center" />
+  if (!signedIn) return <Login />
+
   if (status === 'error') {
     return (
       <main className="center">
         <h1 className="h1">No luck.</h1>
-        <p className="muted">Couldn't load the catalogue. Is the dev server running?</p>
+        <p className="muted">Couldn't load the catalogue. Check your connection and try again.</p>
       </main>
     )
   }
@@ -79,7 +96,7 @@ export default function App() {
     <>
       <InstallBanner />
       {screen === 'landing' ? (
-    <Landing counts={counts} loading={status === 'loading'} onPick={openFeed} />
+    <Landing counts={counts} loading={status === 'loading'} onPick={openFeed} onSignOut={() => supabase.auth.signOut()} />
   ) : (
     <Feed
       kind={kind}

@@ -81,7 +81,7 @@ export default function Login() {
             className="login__input"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="123456"
+            placeholder="Enter code..."
             aria-label="Code"
             inputMode="numeric"
             autoComplete="one-time-code"

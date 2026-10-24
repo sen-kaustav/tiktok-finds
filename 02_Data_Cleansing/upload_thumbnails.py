@@ -9,7 +9,8 @@ from pathlib import Path
 
 import requests
 
-from supabase_env import load_env
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # python -I omits the script dir
+from supabase_env import load_env  # noqa: E402
 
 THUMBS = Path(__file__).resolve().parent.parent / "03_App" / "public" / "thumbs"
 BUCKET = "thumbs"

@@ -4,11 +4,13 @@ Safe to re-run (upserts by video_id). thumb_path is left alone here; upload_thum
 sets it. Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env. Run: python -I load_to_supabase.py
 """
 import csv
+import sys
 from pathlib import Path
 
 import requests
 
-from supabase_env import load_env
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # python -I omits the script dir
+from supabase_env import load_env  # noqa: E402
 
 CSV_PATH = Path(__file__).resolve().parent / "classified_videos.csv"
 BATCH = 100

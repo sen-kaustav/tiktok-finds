@@ -6,3 +6,8 @@
 02_Data_Cleansing/classification_work/
 __pycache__/
 .claude/settings.local.json
+
+# Supabase secrets
+.env
+.env.*
+!.env.example

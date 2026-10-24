@@ -32,22 +32,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png}'],
-        globIgnores: ['thumbs/**'],
+        // Data and thumbnails come from Supabase; they are no longer served from the app shell.
         runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.endsWith('/data/videos.csv'),
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'data' },
-          },
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith(`${base}thumbs/`),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'thumbs',
-              expiration: { maxEntries: 800 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
           {
             urlPattern: ({ url }) => url.origin.includes('fonts.g'),
             handler: 'StaleWhileRevalidate',

@@ -34,7 +34,15 @@ Python with `python -I`.
    joins them to the source rows and writes `classified_videos.csv`. If it
    reports missing or invalid labels, re-run the affected batches (delete their
    `labels_NNN.jsonl` and repeat step 3) before finishing.
-5. **Report** the counts per category, the number of low-confidence rows, and
+5. **Load into Supabase.** `classified_videos.csv` is now a local, git-ignored
+   intermediate; the app reads from Supabase. From `02_Data_Cleansing`, with
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the untracked `.env`:
+   `python -I load_to_supabase.py` (upserts by video_id, so re-running is safe).
+   For new rows, run `python -I download_thumbnails.py` and then
+   `python -I upload_thumbnails.py`, which must end with `OK`; afterwards the
+   local `03_App/public/thumbs/` folder can be deleted again. Thumbnail URLs for
+   rows loaded earlier have expired, so ignore their download failures.
+6. **Report** the counts per category, the number of low-confidence rows, and
    the top cuisines. Mention the file path. Do not paste the whole CSV.
 
 ## Classification rules (give these to every sub-agent)

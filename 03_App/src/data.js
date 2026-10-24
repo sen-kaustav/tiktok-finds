@@ -31,7 +31,7 @@ function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-function toVideo(row, thumbUrls) {
+export function toVideo(row, thumbUrls) {
   const kind = KINDS[row.category]
   if (!kind) return null
   const dish = (row.dish || '').trim()
@@ -56,6 +56,7 @@ function toVideo(row, thumbUrls) {
   const date = row.posted_at ? new Date(row.posted_at) : null
   return {
     id: row.video_id,
+    row,
     kind,
     url: row.canonical_url,
     title,
@@ -126,4 +127,27 @@ export function filterVideos(videos, { kind, meals, cuisines, query, asc }) {
 export function formatDate(time) {
   if (!time) return ''
   return new Date(time).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function patchCache(fn) {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY))
+    if (!cached) return
+    cached.rows = fn(cached.rows)
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cached))
+  } catch { /* storage unavailable */ }
+}
+
+// Writes the changed fields, then returns the rebuilt video. A blocked update (RLS) matches no row and throws.
+export async function saveVideo(video, patch) {
+  const { error } = await supabase.from('videos').update(patch).eq('video_id', video.id).select().single()
+  if (error) throw error
+  patchCache((rows) => rows.map((r) => (r.video_id === video.id ? { ...r, ...patch } : r)))
+  return toVideo({ ...video.row, ...patch }, { [video.row.thumb_path]: video.thumb })
+}
+
+export async function removeVideo(video) {
+  const { error } = await supabase.from('videos').delete().eq('video_id', video.id)
+  if (error) throw error
+  patchCache((rows) => rows.filter((r) => r.video_id !== video.id))
 }

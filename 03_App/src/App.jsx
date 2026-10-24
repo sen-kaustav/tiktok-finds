@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { clearCache, loadVideos, readCache } from './data.js'
+import { clearCache, loadVideos, readCache, removeVideo, saveVideo } from './data.js'
 import { supabase } from './supabase.js'
 import Login from './components/Login.jsx'
 import Landing from './components/Landing.jsx'
 import Feed from './components/Feed.jsx'
+import Edit from './components/Edit.jsx'
 import InstallBanner from './components/InstallBanner.jsx'
 
 // Cross-fade + slide between screens using the View Transitions API.
@@ -44,6 +45,9 @@ export default function App() {
   const [meals, setMeals] = useState(nav.meals ?? [])
   const [cuisines, setCuisines] = useState(nav.cuisines ?? [])
   const [asc, setAsc] = useState(nav.asc ?? false)
+  const [editing, setEditing] = useState(null)
+  const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
 
   const navRef = useRef({})
   useEffect(() => { navRef.current = { screen, kind, query, meals, cuisines, asc } })
@@ -73,7 +77,7 @@ export default function App() {
   // A restored feed needs a landing entry under it, so the back gesture still goes home.
   useEffect(() => {
     if (nav.screen !== 'feed') return
-    if (history.state?.v === 'sheet') history.replaceState({ v: 'feed' }, '')
+    if (history.state?.v === 'sheet' || history.state?.v === 'edit') history.replaceState({ v: 'feed' }, '')
     else if (history.state?.v !== 'feed') {
       history.replaceState({ v: 'landing' }, '')
       history.pushState({ v: 'feed' }, '')
@@ -110,7 +114,8 @@ export default function App() {
     const onPop = (e) => {
       const v = e.state?.v
       setSheet(v === 'sheet')
-      if (v === 'feed' || v === 'sheet') {
+      if (v !== 'edit') setEditing(null)
+      if (v === 'feed' || v === 'sheet' || v === 'edit') {
         setScreen('feed')
       } else {
         transition('back', () => {
@@ -132,6 +137,29 @@ export default function App() {
   const goHome = useCallback(() => history.back(), [])
   const openSheet = useCallback(() => { history.pushState({ v: 'sheet' }, ''); setSheet(true) }, [])
   const closeSheet = useCallback(() => history.back(), [])
+  const openEdit = useCallback((video) => { history.pushState({ v: 'edit' }, ''); setEditing(video) }, [])
+  const closeEdit = useCallback(() => history.back(), [])
+  const say = useCallback((text, undo) => {
+    clearTimeout(toastTimer.current)
+    setToast({ text, undo })
+    toastTimer.current = setTimeout(() => setToast(null), 6000)
+  }, [])
+  const replaceVideo = (next) => setVideos((vs) => vs.map((v) => (v.id === next.id ? next : v)))
+  const saveEdit = async (patch, before) => {
+    const next = await saveVideo(editing, patch)
+    replaceVideo(next)
+    closeEdit()
+    say(`Saved “${next.title}”.`, async () => {
+      try { replaceVideo(await saveVideo(next, before)); say('Undone.') } catch { say('Could not undo that.') }
+    })
+  }
+  const removeEdit = async () => {
+    const video = editing
+    await removeVideo(video)
+    setVideos((vs) => vs.filter((v) => v.id !== video.id))
+    closeEdit()
+    say('Removed from the catalogue.')
+  }
   const clearAll = useCallback(() => { setMeals([]); setCuisines([]); setQuery('') }, [])
 
   const counts = useMemo(() => ({
@@ -165,9 +193,25 @@ export default function App() {
       cuisines={cuisines} setCuisines={setCuisines}
       asc={asc} toggleSort={() => setAsc((a) => !a)}
       sheet={sheet} openSheet={openSheet} closeSheet={closeSheet}
-      clearAll={clearAll} goHome={goHome}
+      clearAll={clearAll} goHome={goHome} onEdit={openEdit}
     />
   )}
+      {editing && (
+        <Edit
+          key={editing.id}
+          video={editing}
+          videos={videos}
+          onSave={saveEdit}
+          onRemove={removeEdit}
+          onClose={closeEdit}
+        />
+      )}
+      {toast && (
+        <div className="toast" role="status">
+          <span className="toast__text">{toast.text}</span>
+          {toast.undo && <button className="link-btn" onClick={() => { const u = toast.undo; setToast(null); u() }}>Undo</button>}
+        </div>
+      )}
     </>
   )
 }

@@ -43,3 +43,4 @@ and `upload_thumbnails.py`). A card falls back to a play-glyph placeholder when 
 - Meal types and cuisines are grouped into friendly pills in `src/data.js`; the exact value stays as a tag on each card.
 - Search matches caption, hashtags, dish, cuisine, meal type, venue, location, dietary and reason, and respects the pills.
 - Installing as a PWA on a phone needs HTTPS (or `localhost`); a LAN `http://` address works for browsing but not install.
+- Long-press a card (about half a second) to open the edit screen (`components/Edit.jsx`). Saving updates the `videos` row in Supabase and the local cache, with an Undo toast. Picking the category Other and saving deletes the row.

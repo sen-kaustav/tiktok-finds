@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, Back, Close, NoResults, Search, Sliders } from '../
 
 export default function Feed({
   kind, videos, query, setQuery, meals, setMeals, cuisines, setCuisines,
-  asc, toggleSort, sheet, openSheet, closeSheet, clearAll, goHome,
+  asc, toggleSort, sheet, openSheet, closeSheet, clearAll, goHome, onEdit,
 }) {
   const isRecipe = kind === 'recipe'
   // Typing stays instant; the grid catches up a beat later.
@@ -86,7 +86,7 @@ export default function Feed({
 
       {results.length > 0 ? (
         <main className="grid">
-          {results.map((v) => <Card key={v.id} video={v} />)}
+          {results.map((v) => <Card key={v.id} video={v} onEdit={onEdit} />)}
         </main>
       ) : (
         <main className="empty">

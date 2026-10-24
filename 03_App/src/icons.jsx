@@ -40,3 +40,18 @@ export const NoResults = ({ size = 40 }) => (
     <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5M8.5 8.5l5 5M13.5 8.5l-5 5" />
   </svg>
 )
+export const Chevron = ({ size = 20 }) => (
+  <svg {...base} width={size} height={size}><path d="m9 6 6 6-6 6" /></svg>
+)
+export const Check = ({ size = 16 }) => (
+  <svg {...base} width={size} height={size} strokeWidth="3"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+)
+export const Plus = ({ size = 22 }) => (
+  <svg {...base} width={size} height={size}><path d="M12 5v14M5 12h14" /></svg>
+)
+export const Info = ({ size = 20 }) => (
+  <svg {...base} width={size} height={size}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+)
+export const Pencil = ({ size = 16 }) => (
+  <svg {...base} width={size} height={size}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+)

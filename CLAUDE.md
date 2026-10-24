@@ -21,7 +21,7 @@ designed yet; the current work is the data pipeline.
   - `upload_thumbnails.py`: uploads `03_App/public/thumbs/*.jpg` to the private `thumbs` bucket and sets `thumb_path`; ends with OK only when the bucket count matches. Run: `python -I upload_thumbnails.py`.
   - `supabase_env.py`: reads `02_Data_Cleansing/.env` (see `.env.example`).
 - `supabase/migrations/`: versioned SQL for the Supabase project (`videos` table, RLS, private `thumbs` bucket).
-- `03_App/`: the PWA (React + Vite, JavaScript). Being moved to read from Supabase (login via email OTP, signed thumbnail URLs); until that lands on this branch it still reads the old CSV; see its README. Design mock-up: the "TikTok Finds App Mockup" Artifact, built on the TikTok Finds design system.
+- `03_App/`: the PWA (React + Vite, JavaScript). Reads the catalogue from Supabase after an email-OTP login, with signed thumbnail URLs, a local-storage cache so it opens offline, and restores the last screen, filters and scroll after returning from TikTok; see its README. Live on GitHub Pages: https://sen-kaustav.github.io/tiktok-finds/ (deployed from `main` by `.github/workflows/pages.yml`). Design mock-up: the "TikTok Finds App Mockup" Artifact, built on the TikTok Finds design system.
 - `.claude/skills/classify-videos/`: project skill (`/classify-videos`) that classifies
   `source_links.csv` using sub-agents, adds category and sub-category columns, and writes
   `classified_videos.csv`. Rules and taxonomy live in its `SKILL.md`.
@@ -30,7 +30,9 @@ designed yet; the current work is the data pipeline.
 - Project `qridaraosgayemrotjtl` (eu-west-1, free tier): https://qridaraosgayemrotjtl.supabase.co. Invite-only; any signed-in user can read and write `videos`; anonymous users get nothing (RLS).
 - Thumbnails live in the private `thumbs` bucket as `<video_id>.jpg`, referenced by `videos.thumb_path`.
 - Keys: the secret (service-role) key bypasses RLS and lives only in the untracked `02_Data_Cleansing/.env` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`); never commit it or put it in the workflow. The publishable key goes in the app via `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (`03_App/.env.local`, git-ignored) and is safe in the bundle only because of RLS.
-- Work is on branch `supabase-backend`; merge to main only after verification, because main still builds from the CSV.
+- Auth: invite-only email one-time codes (8 digits). Public signups are off; add or remove people under Authentication > Users in the dashboard (no redeploy). Emails go through custom SMTP (Gmail app password), which is required to edit the email template; the Magic link template must contain `{{ .Token }}`. Site URL and redirect URLs point at the GitHub Pages address.
+- Deploy: the workflow passes `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from GitHub repository variables (not secrets; the publishable key is public by design). The app has no local data files, so a fresh clone needs `03_App/.env.local` (see `.env.example`) to run.
+- Phone testing: `npm run dev` serves on the LAN; add the LAN address (e.g. `http://192.168.x.x:5173`) to the Supabase redirect URLs.
 
 ## How metadata is fetched
 `yt-dlp` fails on TikTok here. What works: rewrite the link to `tiktok.com/@/video/<id>`,
@@ -54,5 +56,6 @@ app depends on them.
 - `/classify-videos` has been run on all of them: 429 food recipe, 144 restaurant, 1,534 other.
   `classified_videos.csv` holds the 573 kept rows (59 low-confidence, not yet reviewed).
 - `classification_work/` keeps the per-batch labels so runs resume; delete it only to redo classification.
-- Supabase holds all 573 rows and 573 thumbnails (checked). Phase 3 (app switch-over), Phase 4 (deploy) and Phase 6 (verification) of the plan are still to do.
+- Supabase holds all 573 rows and 573 thumbnails (checked); the Supabase-backed app is merged to `main` and deployed. Verified: signed-out access is refused, non-invited emails get no code, signed-in writes work, the catalogue and images load on a phone, and it opens offline.
+- Possible next steps: add the friend's account, a manual add-a-video flow (Supabase Edge Function for the TikTok scrape), an optional ping to stop the free project pausing when idle.
 - Sub-agents occasionally mis-fill fields (batch 9 put confidence into `reason`); `merge_labels.py` validates and refuses to write until fixed.

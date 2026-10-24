@@ -1,12 +1,33 @@
 import { useState } from 'react'
 import { supabase } from '../supabase.js'
 
-// Email one-time code: ask for the email, then the 6-digit code from the message.
+const PENDING_KEY = 'tiktok-finds:login'
+const PENDING_MS = 30 * 60 * 1000
+
+// Opening the mail app can make the phone reload this page. Remember the email and the
+// "enter the code" step for a while so the reload lands back on the code box.
+function readPending() {
+  try {
+    const p = JSON.parse(sessionStorage.getItem(PENDING_KEY))
+    return p && Date.now() - p.at < PENDING_MS ? p : null
+  } catch {
+    return null
+  }
+}
+function savePending(email) {
+  try {
+    if (email) sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email, at: Date.now() }))
+    else sessionStorage.removeItem(PENDING_KEY)
+  } catch { /* storage unavailable */ }
+}
+
+// Email one-time code: ask for the email, then the one-time code from the message.
 // Only invited accounts exist, so shouldCreateUser stays off.
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [pending] = useState(readPending)
+  const [email, setEmail] = useState(pending?.email ?? '')
   const [code, setCode] = useState('')
-  const [step, setStep] = useState('email')
+  const [step, setStep] = useState(pending ? 'code' : 'email')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -19,7 +40,7 @@ export default function Login() {
     })
     setBusy(false)
     if (err) setError('Could not send a code to that email.')
-    else setStep('code')
+    else { savePending(email.trim()); setStep('code') }
   }
 
   async function verify(e) {
@@ -32,6 +53,7 @@ export default function Login() {
     })
     setBusy(false)
     if (err) setError('That code did not work. Check it or ask for a new one.')
+    else savePending(null)
   }
 
   return (
@@ -66,7 +88,7 @@ export default function Login() {
             required
           />
           <button className="login__btn" disabled={busy}>{busy ? 'Checking…' : 'Sign in'}</button>
-          <button type="button" className="login__link" onClick={() => { setStep('email'); setCode(''); setError('') }}>
+          <button type="button" className="login__link" onClick={() => { savePending(null); setStep('email'); setCode(''); setError('') }}>
             Use a different email
           </button>
         </form>

@@ -32,6 +32,7 @@ designed yet; the current work is the data pipeline.
 - Keys: the secret (service-role) key bypasses RLS and lives only in the untracked `02_Data_Cleansing/.env` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`); never commit it or put it in the workflow. The publishable key goes in the app via `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (`03_App/.env.local`, git-ignored) and is safe in the bundle only because of RLS.
 - Auth: invite-only email one-time codes (8 digits). Public signups are off; add or remove people under Authentication > Users in the dashboard (no redeploy). Emails go through custom SMTP (Gmail app password), which is required to edit the email template; the Magic link template must contain `{{ .Token }}`. Site URL and redirect URLs point at the GitHub Pages address.
 - Deploy: the workflow passes `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from GitHub repository variables (not secrets; the publishable key is public by design). The app has no local data files, so a fresh clone needs `03_App/.env.local` (see `.env.example`) to run.
+- Keep-alive: `.github/workflows/keepalive.yml` runs once a day and makes 3 small anonymous reads of `videos` (RLS returns nothing) so the free project is not paused for inactivity. It uses the same two repository variables, fails if a request is not HTTP 200, and GitHub disables it after 60 days without commits (re-enable under Actions).
 - Phone testing: `npm run dev` serves on the LAN; add the LAN address (e.g. `http://192.168.x.x:5173`) to the Supabase redirect URLs.
 
 ## How metadata is fetched
@@ -57,5 +58,5 @@ app depends on them.
   `classified_videos.csv` holds the 573 kept rows (59 low-confidence, not yet reviewed).
 - `classification_work/` keeps the per-batch labels so runs resume; delete it only to redo classification.
 - Supabase holds all 573 rows and 573 thumbnails (checked); the Supabase-backed app is merged to `main` and deployed. Verified: signed-out access is refused, non-invited emails get no code, signed-in writes work, the catalogue and images load on a phone, and it opens offline.
-- Possible next steps: add the friend's account, a manual add-a-video flow (Supabase Edge Function for the TikTok scrape), an optional ping to stop the free project pausing when idle.
+- Possible next steps: add the friend's account, a manual add-a-video flow (Supabase Edge Function for the TikTok scrape).
 - Sub-agents occasionally mis-fill fields (batch 9 put confidence into `reason`); `merge_labels.py` validates and refuses to write until fixed.

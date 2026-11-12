@@ -1,0 +1,34 @@
+name: Keep Supabase active
+
+# Free-tier Supabase projects pause after a week of low activity. Supabase's guidance is
+# "a few user requests to the database each day", so this makes 3 small reads once a day.
+# https://supabase.com/docs/guides/platform/free-project-pausing
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query the videos table 3 times
+        env:
+          SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          for i in 1 2 3; do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+              -H "apikey: $SUPABASE_KEY" \
+              "$SUPABASE_URL/rest/v1/videos?select=video_id&limit=1")
+            echo "Request $i: HTTP $status"
+            if [ "$status" != "200" ]; then
+              echo "::error::Supabase ping failed with HTTP $status"
+              exit 1
+            fi
+            sleep 5
+          done
